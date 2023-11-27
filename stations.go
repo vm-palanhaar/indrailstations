@@ -134,7 +134,7 @@ func railStations(db *sql.DB) {
 				}
 			}
 			if checkStation {
-				stations = append(stations, fmt.Sprintf("%s - %s", sdb.Name, sdb.Name))
+				stations = append(stations, fmt.Sprintf("%s - %s", sdb.Name, sdb.Code))
 			}
 		}
 		log.Print("<---Rail Stations in DB--->")
