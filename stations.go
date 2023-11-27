@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +13,12 @@ import (
 type StationApi struct {
 	Name string
 	Code string
+}
+
+type StationDb struct {
+	Id   string
+	Code string
+	Name string
 }
 
 func getRailStationsApi() []StationApi {
@@ -49,8 +56,35 @@ func getRailStationsApi() []StationApi {
 	return railStationList
 }
 
+func getRailStationsDb(db *sql.DB) []StationDb {
+	table := os.Getenv("TABLE")
+	// execute query
+	log.Println("EXECUTING QUERY to fetch id, station code, station name")
+	rows, err := db.Query(fmt.Sprintf("SELECT id, code, name FROM %s", table))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	stationsDb := []StationDb{}
+	for rows.Next() {
+		rowData := StationDb{}
+		err := rows.Scan(&rowData.Id, &rowData.Code, &rowData.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		stationsDb = append(stationsDb, rowData)
+	}
+	log.Printf("Total no. of rail stations (DB): %d", len(stationsDb))
+	return stationsDb
+}
+
 func railStations(db *sql.DB) {
 	log.Println("START -> GET ALL rail stations API functionality <- START")
 	stationsApi := getRailStationsApi()
 	log.Println("END -> GET ALL rail stations API functionality <- END")
+
+	log.Println("START -> GET ALL rail stations DB functionality <- START")
+	stationsDb := getRailStationsDb(db)
+	log.Println("END -> GET ALL rail stations DB functionality <- END")
 }
