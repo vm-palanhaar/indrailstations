@@ -79,6 +79,26 @@ func getRailStationsDb(db *sql.DB) []StationDb {
 	return stationsDb
 }
 
+func (stationDb StationDb) updateRailStationDb(db *sql.DB, stationApi StationApi) {
+	table := os.Getenv("TABLE")
+	if stationApi.Code == stationDb.Code && stationApi.Name == stationDb.Name {
+		// DO NOTHING
+	} else if stationApi.Code == stationDb.Code && stationApi.Name != stationDb.Name {
+		stmt, err := db.Prepare(
+			fmt.Sprintf("UPDATE %s SET %s = $1 WHERE %s = $2 AND %s = $3",
+				table, "name", "id", "code"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(stationApi.Name, stationDb.Id, stationDb.Code)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("---UPDATE SUCCESS [%s - %s]---", stationApi.Name, stationApi.Code)
+	}
+}
+
 func railStations(db *sql.DB) {
 	log.Println("START -> GET ALL rail stations API functionality <- START")
 	stationsApi := getRailStationsApi()
@@ -87,4 +107,66 @@ func railStations(db *sql.DB) {
 	log.Println("START -> GET ALL rail stations DB functionality <- START")
 	stationsDb := getRailStationsDb(db)
 	log.Println("END -> GET ALL rail stations DB functionality <- END")
+
+	/*
+		Iterate through each station to check for any changes in station name.
+		1. If unchanged, do nothing
+		2. If changed [station name], update station name w.r.t to station code
+	*/
+	if len(stationsApi) == len(stationsDb) {
+		for _, sapi := range stationsApi {
+			for _, sdb := range stationsDb {
+				sdb.updateRailStationDb(db, sapi)
+			}
+		}
+	} else if len(stationsApi) < len(stationsDb) {
+		/*
+			Send mail to admin user(s)
+		*/
+		stations := []string{}
+		for _, sdb := range stationsDb {
+			checkStation := true
+			for _, sapi := range stationsApi {
+				sdb.updateRailStationDb(db, sapi)
+				if sapi.Code == sdb.Code {
+					checkStation = false
+					break
+				}
+			}
+			if checkStation {
+				stations = append(stations, fmt.Sprintf("%s - %s", sdb.Name, sdb.Name))
+			}
+		}
+		log.Print("<---Rail Stations in DB--->")
+		for i, station := range stations {
+			log.Printf("%d. %s", i+1, station)
+		}
+	} else if len(stationsApi) > len(stationsDb) {
+		table := os.Getenv("TABLE")
+		log.Print("<---Rail Stations in API--->")
+		for i, sapi := range stationsApi {
+			checkStation := true
+			for _, sdb := range stationsDb {
+				sdb.updateRailStationDb(db, sapi)
+				if sapi.Code == sdb.Code {
+					checkStation = false
+					break
+				}
+			}
+			if checkStation {
+				stmt, err := db.Prepare(
+					fmt.Sprintf("INSERT INTO %s (%s, %s) VALUES ($1, $2)",
+						table, "code", "name"))
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer stmt.Close()
+				_, err = stmt.Exec(sapi.Code, sapi.Name)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Printf("%d. INSERT SUCCESS [%s - %s]", i+1, sapi.Name, sapi.Code)
+			}
+		}
+	}
 }

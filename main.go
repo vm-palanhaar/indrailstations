@@ -39,4 +39,6 @@ func main() {
 	// Connect to the database
 	db := connectDb()
 	defer db.Close()
+	// rail stations list
+	railStations(db)
 }
