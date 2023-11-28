@@ -8,4 +8,5 @@ CRON job for updates in Railway Stations table
 - PSQL_DB_PWD
 - PSQL_DB_HOST
 - PSQL_DB_PORT
-- TABLE
+- TABLE_INDRAIL_STATIONS
+- ENV = DEV/TEST/STG/PROD

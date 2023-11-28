@@ -57,7 +57,7 @@ func getRailStationsApi() []StationApi {
 }
 
 func getRailStationsDb(db *sql.DB) []StationDb {
-	table := os.Getenv("TABLE")
+	table := os.Getenv("TABLE_INDRAIL_STATIONS")
 	// execute query
 	log.Println("EXECUTING QUERY to fetch id, station code, station name")
 	rows, err := db.Query(fmt.Sprintf("SELECT id, code, name FROM %s", table))
@@ -80,7 +80,7 @@ func getRailStationsDb(db *sql.DB) []StationDb {
 }
 
 func (stationDb StationDb) updateRailStationDb(db *sql.DB, stationApi StationApi) {
-	table := os.Getenv("TABLE")
+	table := os.Getenv("TABLE_INDRAIL_STATIONS")
 	if stationApi.Code == stationDb.Code && stationApi.Name == stationDb.Name {
 		// DO NOTHING
 	} else if stationApi.Code == stationDb.Code && stationApi.Name != stationDb.Name {
@@ -142,7 +142,7 @@ func railStations(db *sql.DB) {
 			log.Printf("%d. %s", i+1, station)
 		}
 	} else if len(stationsApi) > len(stationsDb) {
-		table := os.Getenv("TABLE")
+		table := os.Getenv("TABLE_INDRAIL_STATIONS")
 		log.Print("<---Rail Stations in API--->")
 		for i, sapi := range stationsApi {
 			checkStation := true
